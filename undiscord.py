@@ -41,16 +41,17 @@ def delete_message(auth_token, channel_id, message_id, retry_count=0):
 
 def search_messages(auth_token, channel_id, author_id=None, content=None, has_link=False, has_file=False, min_id=None, max_id=None, include_nsfw=False, offset=0, retry_count=0):
     try:
-        url = f"{DISCORD_API_BASE_URL}/channels/{channel_id}/messages/search"
+        url = f"{DISCORD_API_BASE_URL}/channels/{channel_id}/messages"
         params = {
             "author_id": author_id,
             "content": content,
             "has": "link" if has_link else None,
             "has": "file" if has_file else None,
-            "min_id": min_id,
-            "max_id": max_id,
+            "after": min_id,
+            "before": max_id,
             "include_nsfw": include_nsfw,
             "offset": offset,
+            'limit': None, # todo: get this from args
         }
         headers = {
             "Authorization": auth_token,
@@ -116,21 +117,21 @@ def delete_messages(auth_token, channel_id, author_id=None, content=None, has_li
                 logger.error(f"Error searching messages: {e}")
                 break
 
-            if not messages.get("messages"):
+            if not messages:
                 logger.info("No more messages found.")
                 break
 
             messages_remaining = True
 
-            for message_group in messages["messages"]:
-                for message in message_group:
-                    success, consecutive_403_errors = process_message(auth_token, channel_id, message, include_pinned, pattern, delete_delay, consecutive_403_errors)
-                    if success:
-                        total_deleted += 1
-                    else:
-                        total_failed += 1
+            #for message_group in messages:
+            for message in messages:
+                success, consecutive_403_errors = process_message(auth_token, channel_id, message, include_pinned, pattern, delete_delay, consecutive_403_errors)
+                if success:
+                    total_deleted += 1
+                else:
+                    total_failed += 1
 
-            offset += len(messages["messages"])
+            offset += len(messages)
             logger.info(f"Progress: {total_deleted} messages deleted, {total_failed} messages failed.")
             time.sleep(search_delay / 1000.0)
 
