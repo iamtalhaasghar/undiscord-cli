@@ -4,6 +4,7 @@ import time
 import re
 import json
 import logging
+import math
 from datetime import datetime
 from requests.exceptions import RequestException, HTTPError
 
@@ -79,12 +80,13 @@ def process_message(auth_token, channel_id, message, include_pinned, pattern, de
     try:
         response = delete_message(auth_token, channel_id, message["id"])
         if response.status_code == 429:
-            retry_after = int(response.headers.get("Retry-After", 1))
+            retry_after = math.ceil(float(json.loads(response.content).get('retry_after', 1))) * 60
             logger.warning(f"Rate limited. Retrying after {retry_after} seconds.")
             time.sleep(retry_after)
             response = delete_message(auth_token, channel_id, message["id"])
         if response.status_code == 204:
             logger.info(f"Deleted message {message['id']}")
+            time.sleep(delete_delay / 1000.0)
             consecutive_403_errors = 0  # Reset consecutive 403 errors counter
             return True, consecutive_403_errors
         elif response.status_code == 403:
@@ -97,7 +99,6 @@ def process_message(auth_token, channel_id, message, include_pinned, pattern, de
             logger.error(f"Failed to delete message {message['id']} with status code {response.status_code}")
     except RequestException as e:
         logger.error(f"Error deleting message {message['id']}: {e}")
-
     time.sleep(delete_delay / 1000.0)
     return False, consecutive_403_errors
 
