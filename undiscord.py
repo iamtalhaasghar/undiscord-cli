@@ -158,7 +158,7 @@ def main():
     parser.add_argument("--include_pinned", action="store_true", help="Include pinned messages", default=False)
     parser.add_argument("--pattern", help="Only delete messages that match this regex pattern", default=None)
     parser.add_argument("--search_delay", type=int, default=30000, help="Delay between each search request (in milliseconds)")
-    parser.add_argument("--delete_delay", type=int, default=1000, help="Delay between each delete request (in milliseconds)")
+    parser.add_argument("--delete_delay", type=int, default=2000, help="Delay between each delete request (in milliseconds)")
     parser.add_argument("--config", help="Path to configuration JSON file", default=None)
 
     args = parser.parse_args()
